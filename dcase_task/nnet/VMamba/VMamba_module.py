@@ -53,67 +53,28 @@ def get_num_patches(height=64, width=1001, patch_height=16, patch_width=16):
     return (height // patch_height) * (width // patch_width)
 
 
-# class PatchEmbed_v2(nn.Module):  # input feat:  torch.Size([96, 1, 64, 1001])
-#     def __init__(self, patch_height=64, patch_width=4, embed_dim=768, input_dim=1):  # input_dim=1
-#         super().__init__()
-#         self.patch_height = patch_height
-#         self.patch_width = patch_width
-#         self.patch_maker = Rearrange('b c (h p1) (w p2) -> b (w h) (p1 p2 c)', p1=patch_height, p2=patch_width)
-#         self.patch_embed = nn.Linear(patch_height * patch_width * input_dim, embed_dim)
-#
-#     def forward(self, melspec, length=None):
-#         height = melspec.shape[2] - melspec.shape[2] % self.patch_height
-#         width = melspec.shape[3] - melspec.shape[3] % self.patch_width
-#         patch = self.patch_maker(melspec[:, :, :height, :width])
-#         # print(patch.shape)
-#         patch_embed = self.patch_embed(patch)
-#
-#         if length is not None:
-#             patch_length = (torch.div(height, self.patch_height, rounding_mode='trunc')) * torch.div(
-#                 (length - length % self.patch_width), self.patch_width, rounding_mode='trunc')
-#         else:
-#             patch_length = None
-#
-#         return patch, patch_embed, patch_length
-
-
-class PatchEmbed2D(nn.Module):
-    """
-    Patch embedding adapted for VMamba2DBlock:
-    Input: (B, C, H, W)
-    Output: (B, H_patch, W_patch, embed_dim)
-    """
-
-    def __init__(self, patch_height=16, patch_width=16, embed_dim=768, input_dim=1):
+class PatchEmbed_v2(nn.Module):  # input feat:  torch.Size([96, 1, 64, 1001])
+    def __init__(self, patch_height=64, patch_width=4, embed_dim=768, input_dim=1):  # input_dim=1
         super().__init__()
         self.patch_height = patch_height
         self.patch_width = patch_width
-        self.embed_dim = embed_dim
-        self.input_dim = input_dim
-
-        self.patch_maker = Rearrange(
-            'b c (h ph) (w pw) -> b h w (ph pw c)',
-            ph=patch_height, pw=patch_width
-        )
+        self.patch_maker = Rearrange('b c (h p1) (w p2) -> b (w h) (p1 p2 c)', p1=patch_height, p2=patch_width)
         self.patch_embed = nn.Linear(patch_height * patch_width * input_dim, embed_dim)
 
-    def forward(self, x, length=None):
-        B, C, H, W = x.shape
-        H_crop = H - H % self.patch_height
-        W_crop = W - W % self.patch_width
-        x = x[:, :, :H_crop, :W_crop]
+    def forward(self, melspec, length=None):
+        height = melspec.shape[2] - melspec.shape[2] % self.patch_height
+        width = melspec.shape[3] - melspec.shape[3] % self.patch_width
+        patch = self.patch_maker(melspec[:, :, :height, :width])
+        # print(patch.shape)
+        patch_embed = self.patch_embed(patch)
 
-        patch = self.patch_maker(x)  # (B, H_patch, W_patch, patch_area*C)
-        patch_embed = self.patch_embed(patch)  # (B, H_patch, W_patch, embed_dim)
-
-        patch_length = None
         if length is not None:
-            H_patch = H_crop // self.patch_height
-            W_patch = W_crop // self.patch_width
-            patch_length = H_patch * (length // self.patch_width)
+            patch_length = (torch.div(height, self.patch_height, rounding_mode='trunc')) * torch.div(
+                (length - length % self.patch_width), self.patch_width, rounding_mode='trunc')
+        else:
+            patch_length = None
 
         return patch, patch_embed, patch_length
-
 
 class FrameVMamba(nn.Module):
     def __init__(self, nprompt=0, spec_h=64, spec_w=1001, patch_h=64, patch_w=4, pos_type="cut", in_chans=1,
@@ -131,7 +92,7 @@ class FrameVMamba(nn.Module):
 
         self.pos_type = pos_type
 
-        self.patch_embed = PatchEmbed2D(patch_h, patch_w, embed_dim)
+        self.patch_embed = PatchEmbed_v2(patch_h, patch_w, embed_dim)
         self.mask_embed = nn.Parameter(torch.zeros(1, 1, self.embed_dim))
 
         self.nprompt = nprompt
@@ -298,3 +259,4 @@ def FrameVMambaModel(patch_h=64, patch_w=4, vmamba_dropout=0.1, **kwargs):
         drop_path_rate=vmamba_dropout,
         drop_rate=vmamba_dropout,
         **kwargs)
+
