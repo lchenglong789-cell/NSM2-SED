@@ -28,7 +28,7 @@ class Mamba2(torch.nn.Module):
 
     def load_mamba2(self, path=None):
         if path is None:
-            pre_path = ""
+            pre_path = "../nnet/ckpts/last.ckpt"
             assert os.path.exists(pre_path), "Please make sure you have a default path to load mamba2. Please change this path to the mamba2_as2M.ckpt that you downloaded."
             path = pre_path    # Change path to the mamba2_as2M.ckpt the downloaded checkpoint from the home page.
         state_dict = torch.load(path, map_location="cpu")["state_dict"]
@@ -87,3 +87,4 @@ class Mamba2(torch.nn.Module):
 # 
 # if __name__ == "__main__":
 #     main()
+
