@@ -7,7 +7,7 @@ import warnings
 from functools import partial
 from einops.layers.torch import Rearrange
 
-from VMamba_util import VMamba2DBlock
+from .VMamba_util import VMamba2DBlock
 
 
 def _no_grad_trunc_normal_(tensor, mean, std, a, b):
@@ -259,4 +259,5 @@ def FrameVMambaModel(patch_h=64, patch_w=4, vmamba_dropout=0.1, **kwargs):
         drop_path_rate=vmamba_dropout,
         drop_rate=vmamba_dropout,
         **kwargs)
+
 
