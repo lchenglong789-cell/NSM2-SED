@@ -255,10 +255,11 @@ def FrameASMModel(patch_h=64, patch_w=4, amamba2_dropout=0.1, **kwargs):
         patch_h=patch_h,
         patch_w=patch_w,
         embed_dim=768,
-        depth=7,  # depth=12,
+        depth=12,  # depth=12,
         num_heads=12,
         qkv_bias=False,
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         drop_path_rate=amamba2_dropout,
         drop_rate=amamba2_dropout,
         **kwargs)
+
